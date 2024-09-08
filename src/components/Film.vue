@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, nextTick } from 'vue';
 import { useQuasar } from 'quasar'
 import { fetchData } from "@/helpers/index.js"
 import router from "@/router"
@@ -49,6 +49,13 @@ onMounted(
     }
 )
 
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'  // Défilement fluide
+  });
+};
+
 const handleSessionExpired = () => {
     $q.notify({
         message : "Session expired",
@@ -82,7 +89,13 @@ const editMovie = (currentMovie) => {
     titleEdit.value = currentMovie.title
     synopsisEdit.value = currentMovie.summary
     posterEdit.value = currentMovie.poster
-    dateEdit.value = currentMovie.releaseDateYMD
+    dateEdit.value = ! [null, "", "N/A"].includes(currentMovie.releaseDateYMD) ? new Date(currentMovie.releaseDateYMD).toISOString().split('T')[0] : ""
+    nextTick(() => {
+        const editDiv = document.querySelector('#editDiv');
+        if (editDiv) {
+            editDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
 }
 
 const handleCancelEdit = () => {
@@ -198,6 +211,9 @@ const confirmAddMovie = async () => {
         poster: posterAdd.value,
         releaseDateYMD: dateAdd.value,
     }
+
+    if(newData.releaseDateYMD === "") newData.releaseDateYMD = null
+    
     await fetchData(baseUrl, "POST", { 'Authorization': `Bearer ${ JSON.parse(sessionStorage.getItem('tokenMovies')).value }` }, newData) 
         .then(
             result => {
@@ -251,6 +267,9 @@ const confirmEditMovie = async (id) => {
         poster: posterEdit.value,
         releaseDateYMD: dateEdit.value,
     }
+
+    if(newData.releaseDateYMD === "") newData.releaseDateYMD = null
+
     await fetchData(baseUrl + "/" + id, "PUT", { 'Authorization': `Bearer ${ JSON.parse(sessionStorage.getItem('tokenMovies')).value }` }, newData) 
         .then(
             result => {
@@ -370,7 +389,7 @@ const deleteMovie = async (id) => {
     </div>
 
     <!-- EDIT -->
-    <div class="q-mx-xl" v-if="itemCurrentlyEdited">
+    <div class="q-mx-xl" v-if="itemCurrentlyEdited" id="editDiv">
         <h5 class="q-mb-md">Modifier ce film</h5>
         <q-form class="q-mb-xl"
             @submit.prevent="alertBeforeAction('Vous voulez vraiment modifier ce film?', confirmEditMovie, [currentEditedMovieId])">
@@ -444,6 +463,8 @@ const deleteMovie = async (id) => {
             </div>
         </div>
     </div>
+
+    <q-btn id="topButton" size="sm" color="warning" text-color="dark" round icon="keyboard_double_arrow_up" @click="scrollToTop"/>
 </template>
 
 <style scoped>
@@ -460,5 +481,12 @@ const deleteMovie = async (id) => {
 
 .inputForm {
     max-width: 300px;
+}
+
+#topButton {
+    position: fixed;
+    bottom: 20px;
+    right: 10px;
+    z-index: 100;
 }
 </style>
