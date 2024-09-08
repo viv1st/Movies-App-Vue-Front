@@ -1,17 +1,11 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router';
 import { useRouter } from 'vue-router';
-
-const routerApp = useRouter()
-
-// const signOutCustom = () => {
-//   auth.signOut()
-//   routerApp.push('auth')
-// }
+import router from "@/router"
 </script>
 
 <template>
-  <header>
+  <header v-if="router.currentRoute.value.name !== 'auth'">
     <div class="wrapper">
       <nav class="row text-center">
         <div class="col">
